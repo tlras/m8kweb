@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+	<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+	<head>
+		<title>m8k-gl web</title>
+		<link rel="shortcut icon" type="image/png" href="./favicon.png"/>
+		<canvas id="output" width="854" height="480"></canvas>
+		<style>
+			/*#output {
+				border: solid 1px;
+			}*/
+			html, body {
+				margin: 0px;
+				padding: 0px;
+				overflow: hidden;
+			}
+			#blockName {
+				position: absolute;
+				color: #ffe000;
+				top: 40px;
+				left: 135px;
+				font-size: 45px;
+				font-family: Verdana, Arial;
+				user-select: none;
+			}
+			#fpsCount {
+				position: absolute;
+				bottom: 0px;
+				right: 0px;
+				color: #FFFFFF;
+				font-size: 30px;
+				font-family: Sans Serif;
+				text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+				user-select: none;
+			}
+			#disconMsg {
+				position: absolute;
+				color: red;
+				right: 0px;
+				bottom: 30px;
+				font-size: 30px;
+			}
+		</style>
+	</head>
+	<body>
+		<span id="blockName" style="display: none;">block</span>
+		<span id="fpsCount">FPS: --</span>
+		<span id="disconMsg" style="display: none;">Disconnected. Please wait.</span>
+		<script src="./m4kfast.js"></script>
+	</body>
+</html>
