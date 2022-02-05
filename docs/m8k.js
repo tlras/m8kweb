@@ -1,33 +1,26 @@
 // ==UserScript==
 // @name         m8k-gl
-// @version      1.0-alpha1
+// @version      1.0-alpha2
 // @description  utility client for m4k (WebGL)
 // @author       yagton
 // @match        https://2s4.me/m4k/gl
 // @grant        none
 // ==/UserScript==
 
-/* Copyright 2021 tlras
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at:
-       http://www.apache.org/licenses/LICENSE-2.0
-*/
-
 ((w) => {
     // Global variables.
     let flight_enabled = false;
+    let MD_middle = false;
 
     // Waits condition() to return true, then run good().
     let orig_setInterval = w.setInterval;
-    function waitForCondition(condition, good, freq = 100) {
+    function waitForCondition(condition, good, pollFreq = 100) {
         let wait = orig_setInterval(() => {
             if (condition()) {
                 w.clearInterval(wait);
                 good();
             }
-        }, freq);
+        }, pollFreq);
     }
 
     // y-axis movement handler when flight is enabled
@@ -41,16 +34,25 @@
         }
     }
 
+    /* Our wrapper around systemClockCycle().
+     * (i.e. stuff you want to run each tick) */
+    function clockCycle() {
+        if (MD_middle) {
+            let block = w.getBlock(w.selectX, w.selectY, w.selectZ, 0);
+            if (block !== 0) w.selectedBlock = block;
+            w.updatePreviewBlock();
+        }
+
+        let preClockY = w.cameraPos[1];
+        w.systemClockCycle();
+        if (flight_enabled) updateFlightY(preClockY);
+    }
+
     // Hook into setInterval to wrap around systemClockCycle().
     w.setInterval = (...args) => {
-        w.console.log(args);
         if (args.length === 2 && args[0] === w.systemClockCycle) {
             w.console.info("[m8k-gl] injecting systemClockCycle hook");
-            return orig_setInterval(() => {
-                let preClockY = w.cameraPos[1];
-                w.systemClockCycle();
-                if (flight_enabled) updateFlightY(preClockY);
-            }, ...(args.slice(1)));
+            return orig_setInterval(clockCycle, ...(args.slice(1)));
         } else {
             return orig_setInterval(...args);
         }
@@ -97,5 +99,27 @@
         for (let i = 1; i <= w.BlockMenuLabel.length; ++i) {
             w.BlockMenuID.push(i);
         }
+    });
+
+    // Make a wrapper around the click handler for middle click functionality.
+    waitForCondition(() => typeof w.output.onmouseup === "function", () => {
+        w.console.info("[m8k-gl] injecting click handler");
+
+        let old_onmousedown = w.output.onmousedown;
+        w.output.onmousedown = (e) => {
+            if (e.button === 1) {
+                MD_middle = true;   
+            } else {
+                return old_onmousedown(e);
+            }
+        }
+
+        let old_onmouseup = w.output.onmouseup;
+        w.output.onmouseup = () => {
+            MD_middle = false;
+            return old_onmouseup();
+        }
+
+        
     });
 })(window);
