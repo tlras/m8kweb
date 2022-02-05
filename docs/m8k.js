@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         m8k-gl
-// @version      1.0-alpha3
+// @version      1.0-alpha4
 // @description  utility client for m4k (WebGL)
 // @author       yagton
 // @match        https://2s4.me/m4k/gl
@@ -106,6 +106,9 @@
                     } else {
                         w.console.warn("[m8k] ignoring non-numeric input");
                     }
+                    break;
+                case 82: // r
+                    w.setSpawnPos();
                     break;
                 default:
                     old_onkeydown(e);
