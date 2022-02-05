@@ -1,5 +1,5 @@
 # m8kweb
-A web version of m8k, just incase you don't want to / can't install Tampermonkey.
+A web version of m8k, just incase you don't want to / can't install Tampermonkey. Try it out [here](https://tlras.github.io/m8kweb/).
 
 ## How do I use m8k?
 For the most part it works the same as regular m8k, with the following differences:
