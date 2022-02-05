@@ -4,6 +4,7 @@ A web version of m8k, just incase you don't want to / can't install Tampermonkey
 ## How do I use m8k?
 For the most part it works the same as regular m8k, with the following differences:
 * You can access hidden blocks in the menu.
+* The selected block can be copied with middle mouse click.
 * You can fly using the **f** key.
 * You can change your player's speed with the **\`** key.
 
