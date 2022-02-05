@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         m8k-gl
-// @version      1.0-alpha2
+// @version      1.0-alpha3
 // @description  utility client for m4k (WebGL)
 // @author       yagton
 // @match        https://2s4.me/m4k/gl
@@ -43,9 +43,26 @@
             w.updatePreviewBlock();
         }
 
+        let old_getBlock;
+        if (flight_enabled) {
+            old_getBlock = w.getBlock;
+            let call_counter = 0;
+            w.getBlock = (...args) => {
+                ++call_counter;
+                if (call_counter > w.MD_right) {
+                    return 0;
+                } else {
+                    return old_getBlock(...args);
+                }
+            };
+        }
+
         let preClockY = w.cameraPos[1];
         w.systemClockCycle();
-        if (flight_enabled) updateFlightY(preClockY);
+        if (flight_enabled) {
+            updateFlightY(preClockY);
+            w.getBlock = old_getBlock;
+        }
     }
 
     // Hook into setInterval to wrap around systemClockCycle().
@@ -119,7 +136,5 @@
             MD_middle = false;
             return old_onmouseup();
         }
-
-        
     });
 })(window);
