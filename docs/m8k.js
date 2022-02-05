@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         m8k-gl
-// @version      1.0-alpha4
+// @version      1.0-alpha5
 // @description  utility client for m4k (WebGL)
 // @author       yagton
 // @match        https://2s4.me/m4k/gl
@@ -13,10 +13,13 @@
    this file except in compliance with the License. You may obtain a copy of the
    License at http://www.apache.org/licenses/LICENSE-2.0 */
 
-((w) => {
+   ((w) => {
     // Global variables.
     let flight_enabled = false;
     let MD_middle = false;
+    let internalFOV = (80 * w.Math.PI) / 180;
+    let FOVDelta = (1 * w.Math.PI) / 180;
+    let fast_use = false;
 
     // Waits condition() to return true, then run good().
     let orig_setInterval = w.setInterval;
@@ -64,6 +67,7 @@
         }
 
         let preClockY = w.cameraPos[1];
+        if (fast_use) w.CantClick = 0;
         w.systemClockCycle();
         if (flight_enabled) {
             updateFlightY(preClockY);
@@ -82,13 +86,14 @@
     }
 
     // Hook into w.onkeydown to define custom keybinds.
-    waitForCondition(() => (typeof w.onkeydown === "function"), () => {
+    waitForCondition(() => (typeof w.onkeyup === "function"), () => {
         w.console.info("[m8k-gl] injecting keybind handler");
-        let old_onkeydown = w.onkeydown
+        let old_onkeydown = w.onkeydown;
+        let old_onkeyup = w.onkeyup;
 
         w.onkeydown = (e) => {
             let code = e.keyCode ? e.keyCode : e.which;
-            let speed;
+            let newFOV, speed;
             switch (code) {
                 case 70: // f
                     flight_enabled = !flight_enabled;
@@ -107,14 +112,60 @@
                         w.console.warn("[m8k] ignoring non-numeric input");
                     }
                     break;
+                case 61: // =
+                    let FOV = w.parseFloat(w.prompt(
+                        "Set FOV (default is 80)",
+                        Math.trunc((internalFOV * 180) / w.Math.PI)
+                    ));
+
+                    if (!w.Number.isNaN(speed)) {
+                        internalFOV = (FOV * w.Math.PI) / 180;
+                    } else {
+                        w.console.warn("[m8k] ignoring non-numeric input");
+                    }
+                    break;
                 case 82: // r
                     w.setSpawnPos();
+                    break;
+                case 69: // e
+                    fast_use = true;
+                    break;
+                case 219: // [
+                    newFOV = internalFOV
+                    newFOV += FOVDelta;
+                    if (newFOV <= w.Math.PI) internalFOV = newFOV;
+                    break;
+                case 221: // ]
+                    newFOV = internalFOV
+                    newFOV -= FOVDelta;
+                    if (newFOV > 0) internalFOV = newFOV;
                     break;
                 default:
                     old_onkeydown(e);
             }
         }
+
+        w.onkeyup = (e) => {
+            let code = e.keyCode ? e.keyCode : e.which;
+            switch (code) {
+                case 69: // e
+                    fast_use = false;
+                    break;
+                default:
+                    old_onkeyup(e);
+            }
+        }
     });
+
+    // Hook into perspective to set our own FOV.
+    let old_perspective = w.perspective;
+    w.perspective = (...args) => {
+        if (args.length >= 2 && args[1] === ((80 * w.Math.PI) / 180)) {
+            args[1] = internalFOV;
+        }
+
+        old_perspective(...args);
+    }
 
     // Get access to the hidden blocks.
     waitForCondition(() => (typeof w.BlockMenuID !== "undefined"), () => {
