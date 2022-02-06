@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         m8k-gl
-// @version      1.0-alpha5.1
+// @version      1.0-alpha5.2
 // @description  utility client for m4k (WebGL)
 // @author       yagton
 // @match        https://2s4.me/m4k/gl
@@ -93,11 +93,11 @@
 
         w.onkeydown = (e) => {
             let newFOV, speed;
-            switch (e.key) {
-                case 'f':
+            switch (e.code) {
+                case "KeyF":
                     flight_enabled = !flight_enabled;
                     break;
-                case '`':
+                case "Backquote":
                     speed = w.parseFloat(w.prompt(
                         "Set movement speed (default is 0.1)",
                         w.walkSpeed
@@ -111,7 +111,7 @@
                         w.console.warn("[m8k] ignoring non-numeric input");
                     }
                     break;
-                case '=':
+                case "Equal":
                     let FOV = w.parseFloat(w.prompt(
                         "Set FOV (default is 80)",
                         Math.trunc((internalFOV * 180) / w.Math.PI)
@@ -123,18 +123,18 @@
                         w.console.warn("[m8k] ignoring non-numeric input");
                     }
                     break;
-                case 'r':
+                case "KeyR":
                     w.setSpawnPos();
                     break;
-                case 'e':
+                case "KeyE":
                     fast_use = true;
                     break;
-                case '[':
+                case "BracketLeft":
                     newFOV = internalFOV
                     newFOV += FOVDelta;
                     if (newFOV <= w.Math.PI) internalFOV = newFOV;
                     break;
-                case ']':
+                case "BracketRight":
                     newFOV = internalFOV
                     newFOV -= FOVDelta;
                     if (newFOV > 0) internalFOV = newFOV;
@@ -145,8 +145,8 @@
         }
 
         w.onkeyup = (e) => {
-            switch (e.key) {
-                case 'e':
+            switch (e.code) {
+                case "KeyE":
                     fast_use = false;
                     break;
                 default:
