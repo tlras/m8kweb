@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         m8k-gl
-// @version      1.0-alpha5
+// @version      1.0-alpha5.1
 // @description  utility client for m4k (WebGL)
 // @author       yagton
 // @match        https://2s4.me/m4k/gl
@@ -8,7 +8,7 @@
 // ==/UserScript==
 
 /* Copyright 2022 tlras
-   
+
    Licensed under the Apache License, Version 2.0 (the "License"); you may not use
    this file except in compliance with the License. You may obtain a copy of the
    License at http://www.apache.org/licenses/LICENSE-2.0 */
@@ -92,13 +92,12 @@
         let old_onkeyup = w.onkeyup;
 
         w.onkeydown = (e) => {
-            let code = e.keyCode ? e.keyCode : e.which;
             let newFOV, speed;
-            switch (code) {
-                case 70: // f
+            switch (e.key) {
+                case 'f':
                     flight_enabled = !flight_enabled;
                     break;
-                case 192: // `
+                case '`':
                     speed = w.parseFloat(w.prompt(
                         "Set movement speed (default is 0.1)",
                         w.walkSpeed
@@ -112,30 +111,30 @@
                         w.console.warn("[m8k] ignoring non-numeric input");
                     }
                     break;
-                case 61: // =
+                case '=':
                     let FOV = w.parseFloat(w.prompt(
                         "Set FOV (default is 80)",
                         Math.trunc((internalFOV * 180) / w.Math.PI)
                     ));
 
-                    if (!w.Number.isNaN(speed)) {
+                    if (!w.Number.isNaN(FOV)) {
                         internalFOV = (FOV * w.Math.PI) / 180;
                     } else {
                         w.console.warn("[m8k] ignoring non-numeric input");
                     }
                     break;
-                case 82: // r
+                case 'r':
                     w.setSpawnPos();
                     break;
-                case 69: // e
+                case 'e':
                     fast_use = true;
                     break;
-                case 219: // [
+                case '[':
                     newFOV = internalFOV
                     newFOV += FOVDelta;
                     if (newFOV <= w.Math.PI) internalFOV = newFOV;
                     break;
-                case 221: // ]
+                case ']':
                     newFOV = internalFOV
                     newFOV -= FOVDelta;
                     if (newFOV > 0) internalFOV = newFOV;
@@ -146,9 +145,8 @@
         }
 
         w.onkeyup = (e) => {
-            let code = e.keyCode ? e.keyCode : e.which;
-            switch (code) {
-                case 69: // e
+            switch (e.key) {
+                case 'e':
                     fast_use = false;
                     break;
                 default:
@@ -185,7 +183,7 @@
         let old_onmousedown = w.output.onmousedown;
         w.output.onmousedown = (e) => {
             if (e.button === 1) {
-                MD_middle = true;   
+                MD_middle = true;
             } else {
                 return old_onmousedown(e);
             }
