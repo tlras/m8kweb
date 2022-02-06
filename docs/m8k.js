@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         m8k-gl
-// @version      1.0-alpha5.2
+// @version      1.0-alpha5.3
 // @description  utility client for m4k (WebGL)
 // @author       yagton
 // @match        https://2s4.me/m4k/gl
@@ -194,5 +194,11 @@
             MD_middle = false;
             return old_onmouseup();
         }
+    });
+
+    // Disable block face culling for water to allow for transparency.
+    waitForCondition(() => typeof block_texmap === "object", () => {
+        w.console.info("[m8k-gl] updating transparency rules");
+        w.block_texmap[7].push(true);
     });
 })(window);
