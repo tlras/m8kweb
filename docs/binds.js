@@ -6,7 +6,7 @@
  * permitted in any medium without royalty, provided the copyright notice and
  * this notice are preserved. This file is offered as-is, without any warranty. */
 
-var KeybindManager = () => {
+var KeybindManager = (() => {
     keydown_binds = [];
     keyup_binds = [];
 
@@ -45,4 +45,4 @@ var KeybindManager = () => {
                 return [true, this.keyup_binds[event.code]()];
         }
     };
-};
+})();
