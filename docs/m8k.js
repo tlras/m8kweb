@@ -1,30 +1,38 @@
 // ==UserScript==
 // @name         m8k-gl
-// @version      1.0-alpha5.3
+// @version      1.0-alpha5.4
+// @namespace    https://github.com/tlras
 // @description  utility client for m4k (WebGL)
+// @license      Apache-2.0
 // @author       yagton
 // @match        https://2s4.me/m4k/gl
 // @grant        none
+// @updateURL    https://raw.githubusercontent.com/tlras/m8k-client/master/m8k.user.js
+// @downloadURL  https://raw.githubusercontent.com/tlras/m8k-client/master/m8k.user.js
+// @supportURL   https://github.com/tlras/m8k-client/issues
+// @require      binds.js
 // ==/UserScript==
 
 /* Copyright 2022 tlras
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+ * this file except in compliance with the License. You may obtain a copy of the
+ * License at http://www.apache.org/licenses/LICENSE-2.0 */
 
-   Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-   this file except in compliance with the License. You may obtain a copy of the
-   License at http://www.apache.org/licenses/LICENSE-2.0 */
-
-   ((w) => {
+((w) => {
     // Global variables.
     let flight_enabled = false;
     let MD_middle = false;
     let internalFOV = (80 * w.Math.PI) / 180;
-    let FOVDelta = (1 * w.Math.PI) / 180;
+    const FOVDelta = (1 * w.Math.PI) / 180;
     let fast_use = false;
+    let disableClicks = 0;
+    const clickDelay = 2500 /* milliseconds */;
 
     // Waits condition() to return true, then run good().
-    let orig_setInterval = w.setInterval;
+    let old_setInterval = w.setInterval;
     function waitForCondition(condition, good, pollFreq = 100) {
-        let wait = orig_setInterval(() => {
+        let wait = old_setInterval(() => {
             if (condition()) {
                 w.clearInterval(wait);
                 good();
@@ -67,8 +75,15 @@
         }
 
         let preClockY = w.cameraPos[1];
-        if (fast_use) w.CantClick = 0;
+        if (fast_use) w.CantClick = disableClicks;
+
         w.systemClockCycle();
+
+        if (fast_use && !disableClicks) {
+            disableClicks = 1;
+            old_setInterval(() => { disableClicks = 0 }, clickDelay);
+        }
+
         if (flight_enabled) {
             updateFlightY(preClockY);
             w.getBlock = old_getBlock;
@@ -79,80 +94,80 @@
     w.setInterval = (...args) => {
         if (args.length === 2 && args[0] === w.systemClockCycle) {
             w.console.info("[m8k-gl] injecting systemClockCycle hook");
-            return orig_setInterval(clockCycle, ...(args.slice(1)));
+            return old_setInterval(clockCycle, ...(args.slice(1)));
         } else {
-            return orig_setInterval(...args);
+            return old_setInterval(...args);
         }
     }
 
     // Hook into w.onkeydown to define custom keybinds.
     waitForCondition(() => (typeof w.onkeyup === "function"), () => {
         w.console.info("[m8k-gl] injecting keybind handler");
+
         let old_onkeydown = w.onkeydown;
         let old_onkeyup = w.onkeyup;
 
         w.onkeydown = (e) => {
-            let newFOV, speed;
-            switch (e.code) {
-                case "KeyF":
-                    flight_enabled = !flight_enabled;
-                    break;
-                case "Backquote":
-                    speed = w.parseFloat(w.prompt(
-                        "Set movement speed (default is 0.1)",
-                        w.walkSpeed
-                    ));
-
-                    if (!w.Number.isNaN(speed)) {
-                        w.defaultWalkSpeed = speed;
-                        w.defaultRunSpeed = speed + 0.1;
-                        w.walkSpeed = w.defaultWalkSpeed;
-                    } else {
-                        w.console.warn("[m8k] ignoring non-numeric input");
-                    }
-                    break;
-                case "Equal":
-                    let FOV = w.parseFloat(w.prompt(
-                        "Set FOV (default is 80)",
-                        Math.trunc((internalFOV * 180) / w.Math.PI)
-                    ));
-
-                    if (!w.Number.isNaN(FOV)) {
-                        internalFOV = (FOV * w.Math.PI) / 180;
-                    } else {
-                        w.console.warn("[m8k] ignoring non-numeric input");
-                    }
-                    break;
-                case "KeyR":
-                    w.setSpawnPos();
-                    break;
-                case "KeyE":
-                    fast_use = true;
-                    break;
-                case "BracketLeft":
-                    newFOV = internalFOV
-                    newFOV += FOVDelta;
-                    if (newFOV <= w.Math.PI) internalFOV = newFOV;
-                    break;
-                case "BracketRight":
-                    newFOV = internalFOV
-                    newFOV -= FOVDelta;
-                    if (newFOV > 0) internalFOV = newFOV;
-                    break;
-                default:
-                    old_onkeydown(e);
-            }
-        }
+            let [exists, _] = KeybindManager.keydown_handler(e);
+            if (!exists) old_onkeydown(e);
+        };
 
         w.onkeyup = (e) => {
-            switch (e.code) {
-                case "KeyE":
-                    fast_use = false;
-                    break;
-                default:
-                    old_onkeyup(e);
+            let [exists, _] = KeybindManager.keyup_handler(e);
+            if (!exists) old_onkeyup(e);
+        };
+
+        // === Movement-related binds.
+        KeybindManager.adddown("Backquote", () => {
+            let speed = w.parseFloat(w.prompt(
+                "Set movement speed (default is 0.1)",
+                w.walkSpeed
+            ));
+
+            if (!w.Number.isNaN(speed)) {
+                w.defaultWalkSpeed = speed;
+                w.defaultRunSpeed = speed + 0.1;
+                w.walkSpeed = w.defaultWalkSpeed;
+            } else {
+                w.console.warn("[m8k] ignoring non-numeric input");
             }
-        }
+        });
+
+        KeybindManager.adddown("KeyF", () => {
+            flight_enabled = !flight_enabled;
+        });
+
+        // === FOV binds.
+        KeybindManager.adddown("Equal", () => {
+            let FOV = w.parseFloat(w.prompt(
+                "Set FOV (default is 80)",
+                Math.trunc((internalFOV * 180) / w.Math.PI)
+            ));
+
+            if (!w.Number.isNaN(FOV)) {
+                let internalFOV = (FOV * w.Math.PI) / 180;
+            } else {
+                w.console.warn("[m8k] ignoring non-numeric input");
+            }
+        });
+
+        KeybindManager.adddown("BracketLeft", () => {
+            let newFOV = internalFOV;
+            newFOV += FOVDelta;
+            if (newFOV <= w.Math.PI) internalFOV = newFOV;
+        });
+
+        KeybindManager.adddown("BracketRight", () => {
+            let newFOV = internalFOV;
+            newFOV -= FOVDelta;
+            if (newFOV > 0) internalFOV = newFOV;
+        });
+
+        // === Miscellaneous binds.
+        KeybindManager.adddown("KeyR", w.setSpawnPos);
+
+        KeybindManager.adddown("KeyE", () => { fast_use = true; });
+        KeybindManager.addup("KeyE", () => { fast_use = false; });
     });
 
     // Hook into perspective to set our own FOV.
@@ -196,9 +211,5 @@
         }
     });
 
-    // Disable block face culling for water to allow for transparency.
-    waitForCondition(() => typeof block_texmap === "object", () => {
-        w.console.info("[m8k-gl] updating transparency rules");
-        w.block_texmap[7].push(true);
-    });
+    // Water transparency temporarly disabled due to culling issues.
 })(window);
